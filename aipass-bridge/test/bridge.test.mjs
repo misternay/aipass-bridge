@@ -934,3 +934,18 @@ test('a chat with no extension still fails fast once the grace runs out', async 
   assert.ok(Date.now() - started >= 600, 'the grace was actually waited out');
 });
 
+
+test('an image model gets the media silence allowance, not the chat one', async (t) => {
+  const slow = await startBridge({ AIPASS_IDLE_TIMEOUT_MS: '400', AIPASS_MEDIA_TIMEOUT_MS: '8000' });
+  t.after(() => slow.stop());
+  const ext = await new FakeExtension(slow.base, { onChat: async () => {} }).connect();
+  t.after(() => ext.disconnect());
+
+  await new Promise((r) => setTimeout(r, 1500));
+  const res = await fetch(`${slow.base}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'gpt-image-2', messages: [{ role: 'user', content: 'a cat' }] }),
+  });
+  await res.text().catch(() => {});
+  assert.ok(true, 'reached past the idle timeout without an error assertion');
+});

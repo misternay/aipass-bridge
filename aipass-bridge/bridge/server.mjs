@@ -635,7 +635,10 @@ function startChat({ modelId, text, parts, aspectRatio: ratio, thinkingLevel, vi
       // and dropped a ratio this provider is not served. Re-adding the raw value
       // would put back exactly what validation just removed.
       video: isVideo ? video : undefined,
-      timeoutMs: ['video', 'music'].includes(kindOf(modelId)) ? MEDIA_TIMEOUT_MS : IDLE_TIMEOUT_MS,
+      // Image models go quiet for the whole generation, exactly like a video
+      // render — the 3-minute idle timeout killed image jobs that were about
+      // to succeed, with the credits already spent.
+      timeoutMs: ['video', 'music', 'image'].includes(kindOf(modelId)) ? MEDIA_TIMEOUT_MS : IDLE_TIMEOUT_MS,
       onDelta: (part) => { delivered++; onDelta(part); },
       onDone,
       onError: (message) => {
